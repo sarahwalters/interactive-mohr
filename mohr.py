@@ -19,7 +19,7 @@ def calc_sigp(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz):
 
     a = 1
     b = sigxx + sigyy + sigzz
-    c = sigxx*sigyy + sigxx*sigzz + sigyy*sigzz + tauxy**2 - tauyz**2 - tauxz**2
+    c = sigxx*sigyy + sigxx*sigzz + sigyy*sigzz - tauxy**2 - tauyz**2 - tauxz**2
     d = sigxx*sigyy*sigzz + 2*tauxy*tauxz*tauyz - sigxx*(tauyz**2) - sigyy*(tauxz**2) - sigzz*(tauxy**2)
 
     [sigxxp, sigyyp, sigzzp] = np.roots([a, -b, c, -d])
@@ -27,18 +27,46 @@ def calc_sigp(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz):
     return [sigxxp, sigyyp, sigzzp]
 
 
-def find_centers():
+def find_center(sigp1, sigp2):
     ''' Find the center of a circle. '''
+
+    return (sigp1+sigp2)/2
 
 
 def find_radius():
     ''' Find the radius of a circle. '''
 
 
+def plot(sigxx, sigyy, tauxy):
+    ''' Plots the 2D state of stress. '''
+
+    plt.hold(True)
+    for i in range(360):
+        [sigxxp, sigyyp, tauxyp] = convert(sigxx, sigyy, tauxy, i)
+        plt.plot(sigxxp, tauxyp, 'ro')
+        plt.plot(sigyyp, -tauxyp, 'bo')
+
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.draw()
+    plt.show()
+
+
 def plot3d(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz):
     ''' Plots the 3D state of stress. '''
 
+    # plot(sigxx, sigyy, tauxy)
+
     [sigxxp, sigyyp, sigzzp] = calc_sigp(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz)
+
+    cxy = find_center(sigxxp, sigyyp)
+    cxz = find_center(sigxxp, sigzzp)
+    cyz = find_center(sigyyp, sigzzp)
+
+    # return cxy
+
+    return [cxy, cxz, cyz]
+    # cxz
+    # cyz
 
     # plt.hold(True)
     # for i in range(360):
@@ -57,17 +85,3 @@ def plot3d(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz):
     # plt.gca().set_aspect('equal', adjustable='box')
     # plt.draw()
     # plt.show()
-
-
-def plot(sigxx, sigyy, tauxy):
-    ''' Plots the 2D state of stress. '''
-
-    plt.hold(True)
-    for i in range(360):
-        [sigxxp, sigyyp, tauxyp] = convert(sigxx, sigyy, tauxy, i)
-        plt.plot(sigxxp, tauxyp, 'ro')
-        plt.plot(sigyyp, -tauxyp, 'bo')
-
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.draw()
-    plt.show()
