@@ -45,16 +45,13 @@ def calc_sigp(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz):
     return [sigxxp, sigyyp, sigzzp]
 
 
-def find_center(sigp1, sigp2):
-    ''' Find the center of a circle. '''
+def define_circle(sigp1, sigp2):
+    ''' Calculates circle center and radius. '''
 
-    return (sigp1+sigp2)/2
+    center = (sigp1 + sigp2)/2
+    radius = sigp1 - center
 
-
-def find_radius(sigp, center):
-    ''' Find the radius of a circle. '''
-
-    return (sigp - center)
+    return [center, radius]
 
 
 def calc_circle(center, radius, theta):
@@ -66,32 +63,15 @@ def calc_circle(center, radius, theta):
 
     return [x, y]
 
-
-# def define_circle(sigp1, sigp2):
-#     ''' Calculates circle center and radius. '''
-
-#     center = (sigp1 + sigp2)/2
-
-#     return [center]
-
+    
 def plot3d(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz):
     ''' Plots the 3D state of stress. '''
 
     [sigxxp, sigyyp, sigzzp] = calc_sigp(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz)
 
-    cxy = find_center(sigxxp, sigyyp)
-    cxz = find_center(sigxxp, sigzzp)
-    cyz = find_center(sigyyp, sigzzp)
-
-    rxy = find_radius(sigxxp, cxy)
-    rxz = find_radius(sigxxp, cxz)
-    ryz = find_radius(sigyyp, cyz)
-
-    # 
-    # [cxy, rxy] = define_circle(sigxxp, sigyyp)
-    # [cxz, rxz] = define_circle(sigxxp, sigzzp)
-    # [cyz, ryz] = define_circle(sigyyp, sigzzp)
-    # 
+    [cxy, rxy] = define_circle(sigxxp, sigyyp)
+    [cxz, rxz] = define_circle(sigxxp, sigzzp)
+    [cyz, ryz] = define_circle(sigyyp, sigzzp)
 
     plt.hold(True)
     for i in range(360):
