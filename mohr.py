@@ -32,7 +32,7 @@ def plot2d(sx, sy, txy):
 
 # PLOTTING 3D STATE OF STRESS
 
-def calc_sigp(sx, sy, sz, txy, txz, tyz):
+def calc_sigp(sx, sy, sz, txy, tyz, txz):
     ''' Calculates principal stresses for 3D state of stress. '''
 
     a = 1
@@ -49,7 +49,7 @@ def define_circle(sigp1, sigp2):
     ''' Calculates circle center and radius. '''
 
     center = (sigp1 + sigp2)/2
-    radius = sigp1 - center
+    radius = abs(sigp1 - center)
 
     return [center, radius]
 
@@ -82,6 +82,15 @@ def plot3d(sx, sy, sz, txy, txz, tyz):
         plt.plot(xval1, yval1, 'go')
         plt.plot(xval2, yval2, 'bo')
         plt.plot(xval3, yval3, 'ro')
+
+    plt.plot(sx, txy, 'ro')
+    plt.plot(sx, -txy, 'ro')
+    #plt.plot(sx, txz, 'ro')
+    plt.plot(sy, txy, 'ro')
+    plt.plot(sy, -txy, 'ro')
+    #plt.plot(sy, tyz, 'ro')
+    #plt.plot(sz, tyz, 'ro')
+    #plt.plot(sz, txz, 'ro')
 
     plt.gca().set_aspect('equal', adjustable='box')
     plt.draw()
