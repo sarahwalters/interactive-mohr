@@ -5,25 +5,25 @@ import numpy as np
 
 # PLOTTING 2D STATE OF STRESS
 
-def convert(sigxx, sigyy, tauxy, theta):
+def convert(sx, sy, txy, theta):
     ''' Calculates principal stresses for 2D state of stress. '''
 
     rad = math.radians(theta)
-    sigxxp = (sigxx+sigyy)/2 + (sigxx-sigyy)*math.cos(2*rad)/2 + tauxy*math.sin(2*rad)
-    sigyyp = (sigxx+sigyy)/2 - (sigxx-sigyy)*math.cos(2*rad)/2 - tauxy*math.sin(2*rad)  
-    tauxyp = -(sigxx-sigyy)*math.sin(2*rad)/2 + tauxy*math.cos(2*rad)
+    sxp = (sx+sy)/2 + (sx-sy)*math.cos(2*rad)/2 + txy*math.sin(2*rad)
+    syp = (sx+sy)/2 - (sx-sy)*math.cos(2*rad)/2 - txy*math.sin(2*rad)
+    txyp = -(sx-sy)*math.sin(2*rad)/2 + txy*math.cos(2*rad)
 
-    return [sigxxp, sigyyp, tauxyp]
+    return [sxp, syp, txyp]
 
 
-def plot2d(sigxx, sigyy, tauxy):
+def plot2d(sx, sy, txy):
     ''' Plots the 2D state of stress. '''
 
     plt.hold(True)
     for i in range(360):
-        [sigxxp, sigyyp, tauxyp] = convert(sigxx, sigyy, tauxy, i)
-        plt.plot(sigxxp, tauxyp, 'ro')
-        plt.plot(sigyyp, -tauxyp, 'bo')
+        [sxp, syp, txyp] = convert(sx, sy, txy, i)
+        plt.plot(sxp, txyp, 'ro')
+        plt.plot(syp, -txyp, 'bo')
 
     plt.gca().set_aspect('equal', adjustable='box')
     plt.draw()
@@ -32,17 +32,17 @@ def plot2d(sigxx, sigyy, tauxy):
 
 # PLOTTING 3D STATE OF STRESS
 
-def calc_sigp(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz):
+def calc_sigp(sx, sy, sz, txy, txz, tyz):
     ''' Calculates principal stresses for 3D state of stress. '''
 
     a = 1
-    b = sigxx + sigyy + sigzz
-    c = sigxx*sigyy + sigxx*sigzz + sigyy*sigzz - tauxy**2 - tauyz**2 - tauxz**2
-    d = sigxx*sigyy*sigzz + 2*tauxy*tauxz*tauyz - sigxx*(tauyz**2) - sigyy*(tauxz**2) - sigzz*(tauxy**2)
+    b = sx + sy + sz
+    c = sx*sy + sx*sz + sy*sz - txy**2 - tyz**2 - txz**2
+    d = sx*sy*sz + 2*txy*txz*tyz - sx*(tyz**2) - sy*(txz**2) - sz*(txy**2)
 
-    [sigxxp, sigyyp, sigzzp] = np.roots([a, -b, c, -d])
+    [sxp, syp, szp] = np.roots([a, -b, c, -d])
 
-    return [sigxxp, sigyyp, sigzzp]
+    return [sxp, syp, szp]
 
 
 def define_circle(sigp1, sigp2):
@@ -63,15 +63,15 @@ def calc_circle(center, radius, theta):
 
     return [x, y]
 
-    
-def plot3d(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz):
+
+def plot3d(sx, sy, sz, txy, txz, tyz):
     ''' Plots the 3D state of stress. '''
 
-    [sigxxp, sigyyp, sigzzp] = calc_sigp(sigxx, sigyy, sigzz, tauxy, tauxz, tauyz)
+    [sxp, syp, szp] = calc_sigp(sx, sy, sz, txy, txz, tyz)
 
-    [cxy, rxy] = define_circle(sigxxp, sigyyp)
-    [cxz, rxz] = define_circle(sigxxp, sigzzp)
-    [cyz, ryz] = define_circle(sigyyp, sigzzp)
+    [cxy, rxy] = define_circle(sxp, syp)
+    [cxz, rxz] = define_circle(sxp, szp)
+    [cyz, ryz] = define_circle(syp, szp)
 
     plt.hold(True)
     for i in range(360):
