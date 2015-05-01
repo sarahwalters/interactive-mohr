@@ -13,6 +13,7 @@ class MohrModel:
         self.txz = txz
 
         [sxp, syp, szp] = mohr.calc_sigp(sx, sy, sz, txy, tyz, txz)
+        self.principals = [int(sxp),int(syp),int(szp)]
 
         circ1 = mohr.define_circle(sxp, syp)
         circ2 = mohr.define_circle(sxp, szp)
@@ -48,6 +49,25 @@ class MohrView:
             g = grays[i]
             pygame.draw.circle(self.screen, pygame.Color(g,g,g), (c.sig+500, 500), c.radius)
     
+        purple = (102,58,81)
+        #label1 = myfont.render("%s" %(c.sig + c.radius), 1, purple)
+        #self.screen.blit(label1,(50,700))
+
+        for i, k in enumerate(self.model.principals):
+            label = myfont.render("%s" %(k), 1, purple) #*****FIX***go through intersections
+            self.screen.blit(label,(50,690 + 20*i))
+
+        for i, l in enumerate(self.model.circles):
+            label2 = myfont.render("%s" %(l.radius), 1, purple)
+            self.screen.blit(label2,(50,610 + 20*i))
+
+        label3 = myfont.render("Principal Stresses", 1, purple)
+        self.screen.blit(label3,(50,670))
+
+        label4 = myfont.render("Maximum Shear Stresses", 1, purple)
+        self.screen.blit(label4,(50,590))
+
+
         pygame.display.update()
     
 class MohrController:
@@ -81,6 +101,8 @@ if __name__ == '__main__':
     model = MohrModel(80,50,20,20,40,40) 
     view = MohrView(model, screen)
     controller = MohrController(model)
+
+    myfont=pygame.font.SysFont("monospace", 15)
 
     running = True # on/off switch
 
