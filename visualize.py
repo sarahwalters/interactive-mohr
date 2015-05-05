@@ -3,6 +3,10 @@ from pygame.locals import *
 import time
 import mohr
 
+XSHIFT = 500
+YSHIFT = 400
+MARKERRADIUS = 7
+
 class MohrModel:
     def __init__(self, sx, sy, sz, txy, tyz, txz):
         self.sx = sx
@@ -13,8 +17,23 @@ class MohrModel:
         self.txz = txz
 
         [sxp, syp, szp] = mohr.calc_sigp(sx, sy, sz, txy, tyz, txz)
-        self.principals = [int(sxp),int(syp),int(szp)]
+        self.principals = [int(sxp), int(syp), int(szp)]
 
+        circ1 = mohr.define_circle(sxp, syp)
+        circ2 = mohr.define_circle(sxp, szp)
+        circ3 = mohr.define_circle(syp, szp)
+
+        circles = [circ1, circ2, circ3]
+        circles = sorted(circles, key=lambda tup: tup[1])
+
+        # for tracking which principal is moving (if one is)
+        self.movingPrincipal = None
+
+        # the circles themselves
+        self.circles = [Circle(*circles[2]), Circle(*circles[1]), Circle(*circles[0])]
+
+    def update(self):
+    	[sxp, syp, szp] = self.principals
         circ1 = mohr.define_circle(sxp, syp)
         circ2 = mohr.define_circle(sxp, szp)
         circ3 = mohr.define_circle(syp, szp)
@@ -24,8 +43,6 @@ class MohrModel:
 
         self.circles = [Circle(*circles[2]), Circle(*circles[1]), Circle(*circles[0])]
 
-    def update(self):
-        pass
 
 class Circle:
     def __init__(self, sig, radius):
@@ -36,6 +53,7 @@ class Circle:
         self.sig = int(sig)
         self.radius = int(radius)
 
+
 class MohrView:
     def __init__(self, model, screen):
         self.model = model # class Mohr
@@ -44,49 +62,96 @@ class MohrView:
     def draw(self):
         self.screen.fill(pygame.Color(0,0,0)) # fill with black
 
-        grays = [50, 100, 150]
-        for i, c in enumerate(self.model.circles):
+        # draw circles
+        grays = [75,125,200]
+        for i,c in enumerate(self.model.circles):
             g = grays[i]
-            pygame.draw.circle(self.screen, pygame.Color(g,g,g), (c.sig+500, 500), c.radius)
+            pygame.draw.circle(self.screen, pygame.Color(g,g,g), (c.sig+XSHIFT, YSHIFT), c.radius)
     
-        purple = (102,58,81)
-        #label1 = myfont.render("%s" %(c.sig + c.radius), 1, purple)
-        #self.screen.blit(label1,(50,700))
+        # mark & label the principal stresses
+        for i,p in enumerate(self.model.principals):
+            color = [0,0,0]
+            color[i] = 255
 
-        for i, k in enumerate(self.model.principals):
-            label = myfont.render("%s" %(k), 1, purple) #*****FIX***go through intersections
+            label = myfont.render("%s" %(p), 1, color) #*****FIX***go through intersections
             self.screen.blit(label,(50,690 + 20*i))
 
+            if i == self.model.movingPrincipal: # different color if moving
+                pygame.draw.circle(self.screen, pygame.Color(255,255,255), (p+XSHIFT, YSHIFT), MARKERRADIUS)
+            else:
+                pygame.draw.circle(self.screen, pygame.Color(*color), (p+XSHIFT, YSHIFT), MARKERRADIUS)
+
+        # label the max shears
         for i, l in enumerate(self.model.circles):
-            label2 = myfont.render("%s" %(l.radius), 1, purple)
+            color = [255,255,255]
+            color[i] = 0
+
+            label2 = myfont.render("%s" %(l.radius), 1, color)
             self.screen.blit(label2,(50,610 + 20*i))
 
-        label3 = myfont.render("Principal Stresses", 1, purple)
+            if False: # different color if moving
+                pygame.draw.circle(self.screen, pygame.Color(255,255,255), (p+XSHIFT, YSHIFT), MARKERRADIUS)
+            else:
+                pygame.draw.circle(self.screen, pygame.Color(*color), (l.sig+XSHIFT, l.radius+YSHIFT), MARKERRADIUS)
+
+        label3 = myfont.render("Principal Stresses", 1, (255,255,255))
         self.screen.blit(label3,(50,670))
 
-        label4 = myfont.render("Maximum Shear Stresses", 1, purple)
+        label4 = myfont.render("Maximum Shear Stresses", 1, (255,255,255))
         self.screen.blit(label4,(50,590))
 
-
         pygame.display.update()
-    
+   
+
 class MohrController:
     def __init__(self, model):
         self.model = model
+        self.model.movingPrincipal = None
+        self.model.movingMaxShear = None
 
     def handleEvent(self, event):
-        pass
-        #''' Responds to player arrow key input '''
-        #if event.type != KEYDOWN: # catchall for events which are not arrow presses
-        #    return
-        #for box in self.model.boxes:
-        #    # check whether box is in target range
-        #    if box.centery > self.model.sy - 5*self.model.side/2 and box.centery < self.model.sy - 2*self.model.side:
-        #        # check whether key pressed was correct key
-        #        if event.key == self.arrowEventDict[box.arrow]:
-        #            # remove and update score
-        #            self.model.boxes.remove(box)
-        #            self.model.score += 1
+        if event.type == MOUSEBUTTONDOWN:
+            self.model.movingPrincipal = self.inPrincipalMarker(event.pos)
+            self.model.movingMaxShear = self.inMaxShearMarker(event.pos)
+
+        elif event.type == MOUSEBUTTONUP:
+            if self.model.movingPrincipal != None:
+                self.model.movingPrincipal = None
+
+            if self.model.movingMaxShear != None:
+                self.model.movingMaxShear = None
+
+        elif event.type == MOUSEMOTION:
+            if self.model.movingPrincipal != None:
+                self.model.principals[self.model.movingPrincipal] = event.pos[0]-XSHIFT
+                self.model.update()
+
+            if self.model.movingMaxShear != None:
+                print 'time to move!'
+
+    def inPrincipalMarker(self, pos):
+        # default to no marker
+        inMarker = None
+
+        # check each intersection point
+        for i, p in enumerate(self.model.principals):
+            dist = ((pos[0]-p-XSHIFT)**2 + (pos[1]-0-YSHIFT)**2)**0.5
+            if dist < MARKERRADIUS: # in this point?
+                inMarker = i
+
+        return inMarker
+
+    def inMaxShearMarker(self, pos):
+    	# default to no marker
+        inMarker = None
+
+        # check each intersection point
+        for i, l in enumerate(self.model.circles):
+            dist = ((pos[0]-l.sig-XSHIFT)**2 + (pos[1]-l.radius-YSHIFT)**2)**0.5
+            if dist < MARKERRADIUS: # in this point?
+                inMarker = i
+
+        return inMarker
 
     
 if __name__ == '__main__':
@@ -107,8 +172,12 @@ if __name__ == '__main__':
     running = True # on/off switch
 
     while running:
-        model.update()
         view.draw()
         time.sleep(.001) #game speed limit
+        for event in pygame.event.get():
+       	    if event.type == QUIT: # player closed window
+                running = False
+            if event.type in [MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION]: # arrow key press
+                controller.handleEvent(event)
 
     pygame.quit() # closes open pygame window once game is over
