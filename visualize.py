@@ -28,6 +28,7 @@ class MohrModel:
 
         # for tracking which principal is moving (if one is)
         self.movingPrincipal = None
+        self.movingMaxShear = None
 
         # the circles themselves
         self.circles = [Circle(*circles[2]), Circle(*circles[1]), Circle(*circles[0])]
@@ -122,6 +123,9 @@ class MohrController:
             if self.model.movingMaxShear != None:
                 self.model.oldRadius = self.model.circles[self.model.movingMaxShear].radius
                 self.model.oldPrincipals = self.model.principals
+                sortedprincipals = sorted(self.model.principals)
+                middleprincipal = sortedprincipals[1]
+                self.model.oldComparison = self.model.circles[0].sig > middleprincipal
 
         elif event.type == MOUSEBUTTONUP:
             self.model.movingPrincipal = None
@@ -136,10 +140,41 @@ class MohrController:
 
             if self.model.movingMaxShear != None:
                 newRadius = event.pos[1]-YSHIFT
-                ratio = newRadius/float(self.model.oldRadius)
-                self.model.principals = [int(op*ratio) for op in self.model.oldPrincipals]
-                self.model.circles[self.model.movingMaxShear].update(radius=newRadius)
-                self.model.update()
+
+                if self.model.movingMaxShear == 0:
+                    ratio = newRadius/float(self.model.oldRadius)
+                    self.model.principals = [int(op*ratio) for op in self.model.oldPrincipals]
+                    self.model.circles[self.model.movingMaxShear].update(radius=newRadius)
+                    self.model.update()
+                else:
+                	# which principal is the middle one?
+                	sortedprincipals = sorted(self.model.principals)
+                	middleprincipal = sortedprincipals[1]
+                	middleindex = self.model.principals.index(middleprincipal)
+
+                	# which center is the left one?
+                	bigCenter = self.model.circles[0].sig
+                	newComparison = bigCenter > middleprincipal
+                	if newComparison != self.model.oldComparison:
+                		# switch movingMaxShear
+                		shears = [1,2]
+                		currentIndex = shears.index(self.model.movingMaxShear)
+                		newIndex = int(not currentIndex)
+                		self.model.movingMaxShear = shears[newIndex]
+
+                		# update the comparison storage var
+                		self.model.oldComparison = newComparison
+                		
+                	movingCenter = self.model.circles[self.model.movingMaxShear].sig
+
+                	if movingCenter < bigCenter:
+                		newPrincipal = sortedprincipals[0] + 2*newRadius
+                	else:
+                		newPrincipal = sortedprincipals[2] - 2*newRadius
+
+                	self.model.principals[middleindex] = newPrincipal
+                	self.model.update()
+
 
     def inPrincipalMarker(self, pos):
         # default to no marker
