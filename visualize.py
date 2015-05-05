@@ -49,9 +49,11 @@ class Circle:
         self.sig = int(sig) # tuple
         self.radius = int(radius) # number
 
-    def update(self, sig, radius):
-        self.sig = int(sig)
-        self.radius = int(radius)
+    def update(self, sig=None, radius=None):
+        if sig:
+            self.sig = int(sig)
+        if radius:
+            self.radius = int(radius)
 
 
 class MohrView:
@@ -89,8 +91,8 @@ class MohrView:
             label2 = myfont.render("%s" %(l.radius), 1, color)
             self.screen.blit(label2,(50,610 + 20*i))
 
-            if False: # different color if moving
-                pygame.draw.circle(self.screen, pygame.Color(255,255,255), (p+XSHIFT, YSHIFT), MARKERRADIUS)
+            if i == self.model.movingMaxShear: # different color if moving
+                pygame.draw.circle(self.screen, pygame.Color(255,255,255), (l.sig+XSHIFT, l.radius+YSHIFT), MARKERRADIUS)
             else:
                 pygame.draw.circle(self.screen, pygame.Color(*color), (l.sig+XSHIFT, l.radius+YSHIFT), MARKERRADIUS)
 
@@ -108,18 +110,24 @@ class MohrController:
         self.model = model
         self.model.movingPrincipal = None
         self.model.movingMaxShear = None
+        self.model.oldRadius = None
+        self.model.oldPrincipals = None
 
     def handleEvent(self, event):
         if event.type == MOUSEBUTTONDOWN:
             self.model.movingPrincipal = self.inPrincipalMarker(event.pos)
             self.model.movingMaxShear = self.inMaxShearMarker(event.pos)
 
-        elif event.type == MOUSEBUTTONUP:
-            if self.model.movingPrincipal != None:
-                self.model.movingPrincipal = None
-
+            # save the radius, if changing max shear
             if self.model.movingMaxShear != None:
-                self.model.movingMaxShear = None
+                self.model.oldRadius = self.model.circles[self.model.movingMaxShear].radius
+                self.model.oldPrincipals = self.model.principals
+
+        elif event.type == MOUSEBUTTONUP:
+            self.model.movingPrincipal = None
+            self.model.movingMaxShear = None
+            self.model.oldRadius = None
+            self.model.oldPrincipals = None
 
         elif event.type == MOUSEMOTION:
             if self.model.movingPrincipal != None:
@@ -127,7 +135,11 @@ class MohrController:
                 self.model.update()
 
             if self.model.movingMaxShear != None:
-                print 'time to move!'
+                newRadius = event.pos[1]-YSHIFT
+                ratio = newRadius/float(self.model.oldRadius)
+                self.model.principals = [int(op*ratio) for op in self.model.oldPrincipals]
+                self.model.circles[self.model.movingMaxShear].update(radius=newRadius)
+                self.model.update()
 
     def inPrincipalMarker(self, pos):
         # default to no marker
