@@ -70,6 +70,11 @@ class MohrView:
         for i,c in enumerate(self.model.circles):
             g = grays[i]
             pygame.draw.circle(self.screen, pygame.Color(g,g,g), (c.sig+XSHIFT, YSHIFT), c.radius)
+
+        # draw axes
+        pygame.draw.line(self.screen, pygame.Color(255,255,255), (0,YSHIFT), (XSHIFT*2, YSHIFT), 1)
+
+        pygame.draw.line(self.screen, pygame.Color(255,255,255), (XSHIFT,0), (XSHIFT, YSHIFT*2), 1)
     
         # mark & label the principal stresses
         for i,p in enumerate(self.model.principals):
